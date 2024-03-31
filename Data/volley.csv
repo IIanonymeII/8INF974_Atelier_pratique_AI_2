@@ -1,5 +1,5 @@
-away_current_pos,away_last_yr_pos,away_prev_game_perf,away_team_av_points,away_team_av_points_conceded,away_team_away_form,away_team_form,away_team_rest_time,away_win_percentage,h2h_form,home_current_pos,home_last_yr_pos,home_prev_game_perf,home_team_av_points,home_team_av_points_conceded,home_team_form,home_team_home_form,home_team_rest_time,home_win_percentage,match_importance,result,Date,away_team,home_team,month,year
-12,12,0,20,20,0,0,7,50,0,2,2,0,20,20,0,0,7,50,0,1,7,Santo Andre,America Volei,11,2010
+,away_last_yr_pos,away_prev_game_perf,away_team_av_points,away_team_av_points_conceded,away_team_away_form,away_team_form,away_team_rest_time,away_win_percentage,h2h_form,home_current_pos,home_last_yr_pos,home_prev_game_perf,home_team_av_points,home_team_av_points_conceded,home_team_form,home_team_home_form,home_team_rest_time,home_win_percentage,match_importance,result,Date,away_team,home_team,month,year
+12,12,0,20,20,0,0,7,50,0,2,2,0,20,20,0,0,7,50,0,1,7,Santo Andre,America Volei,11,2010away_current_pos
 7,6,0,20,20,0,0,7,50,0,8,1,0,20,20,0,0,7,50,0,1,9,Fatima UCS,Cimed,11,2010
 13,3,0,20,20,0,0,7,50,0,11,5,0,20,20,0,0,7,50,0,1,11,Sada Cruzeiro,Sesi,11,2010
 15,8,0,20,20,0,0,7,50,0,11,4,0,20,20,0,0,7,50,0,1,11,Minas,Pinheiros,11,2010
