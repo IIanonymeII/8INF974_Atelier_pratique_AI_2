@@ -6,7 +6,7 @@ warnings.filterwarnings('ignore')
 
 def trainTestSplit(Set):
 
-	DataFrame = pd.read_csv(r'Football\Foot_EngineeredData.csv', delimiter = ',')
+	DataFrame = pd.read_csv('..\..\Data\Foot\Foot_EngineeredData.csv', delimiter = ',')
 
 	## Removing unwanted fields firstly.
 	## Creating a list of betting odds column fields.
