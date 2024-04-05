@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd 
 from collections import OrderedDict
-from InputData import loadDataFrameList
+from Football.Scripts.InputData import loadDataFrameList
 
 warnings.filterwarnings('ignore')
 
