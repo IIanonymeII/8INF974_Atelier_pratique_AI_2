@@ -10,127 +10,46 @@ warnings.filterwarnings('ignore')
 ## Loading the list of dataframes from DataPreprocessing.
 DataFrames = loadDataFrameList()
 
-'''-----------------------------------     Adding Fifa Ratings  --------------------------------------------'''
+print(DataFrames[0]["Season"])
 
-## Creating a function that adds the scraped fifa ratings to the dataframe.
-def addFifaRatings(DataFrame):
+print(DataFrames[2].head(5))
 
-    ## Reading in the fifa ratings file.
-    fifaRatings = pd.read_csv('./Log.csv', sep = ',')
-
-    ## Singling out the season currently under observation.
-    currSeason = DataFrame.Season.unique()[0]
-
-    ## Isolating the respective season fifa ratings.
-    fifaRatingsIsolated = fifaRatings[ fifaRatings['Season'] == currSeason]
-
-    ## Initialsing the values in the coloumns for the Fifa Team Rankings .
-    DataFrame['AOverall'] = np.nan
-    DataFrame['HOverall'] = np.nan
-    DataFrame['AAttack'] = np.nan
-    DataFrame['HAttack'] = np.nan
-    DataFrame['AMidfield'] = np.nan
-    DataFrame['HMidfield'] = np.nan
-    DataFrame['ADefense'] = np.nan
-    DataFrame['HDefense'] = np.nan
-
-    ## Creating a list of all the teams that played in that season (Non-Standard).
-    TeamsNS = list((DataFrame).HomeTeam.unique())
-    TeamsNS = sorted(TeamsNS, key = str.lower)
-
-    ## Creating a list of all the teams that played in that season (Standard).
-    TeamsS = list((fifaRatingsIsolated).Name.unique())
-    TeamsS = sorted(TeamsS, key = str.lower)
-
-    ## Replacing the non-standard names by the standard names in the dataframe.
-    DataFrame = DataFrame.replace(TeamsNS, TeamsS)
-
-    ## Creating a Temporary DataFrame which consists of the records of the matches teamwise .
-    for z in range(0, 20):
-        
-        ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[ (DataFrame['HomeTeam'] == str(TeamsS[z]) ) | ( DataFrame['AwayTeam'] == str(TeamsS[z])) ]
-        
-        ## Parsing the attributes for the particular team under observation.
-        infoRow = fifaRatingsIsolated[fifaRatingsIsolated['Name'] == TeamsS[z]]
-        Overall = infoRow['Overall'] 
-        Defense = infoRow['Defense']
-        MidField = infoRow['Midfield']
-        Attack = infoRow['Attack']
-        
-         ## Creating a list for the index values of the games contained in the tempDF.
-        gameIndices = tempDF.index.tolist()
-
-        ## Creating two lists which contains the index number of those games wherein the team under observation was Home or Away.
-        indexHome = []
-        indexAway = []
-
-        ## Segregate home and away match indices.
-        for index, row in tempDF.iterrows():
-
-            if (TeamsS[z] == row['HomeTeam']):
-                 indexHome.append(index)
-
-            elif (TeamsS[z] == row['AwayTeam']):
-                indexAway.append(index)
-
-        ## Appending the appropriate "KPP" values to the dataframe.
-        for j in range(0, 38):
-
-            if (gameIndices[j] in indexHome):
-                DataFrame['HOverall'][gameIndices[j]] = Overall
-                DataFrame['HAttack'][gameIndices[j]] = Attack
-                DataFrame['HMidfield'][gameIndices[j]] = MidField
-                DataFrame['HDefense'][gameIndices[j]] = Defense
-
-            elif (gameIndices[j] in indexAway):
-                DataFrame['AOverall'][gameIndices[j]] = Overall
-                DataFrame['AAttack'][gameIndices[j]] = Attack
-                DataFrame['AMidfield'][gameIndices[j]] = MidField
-                DataFrame['ADefense'][gameIndices[j]] = Defense
-
-    ## Filling in the coloumns for "Overall, Attack, Midfield and Defense".
-    DataFrame['Overall'] = DataFrame.apply(lambda row: row['HOverall'] - row['AOverall'], axis = 1)
-    DataFrame['Attack'] = DataFrame.apply(lambda row: row['HAttack'] - row['AAttack'], axis = 1)
-    DataFrame['Midfield'] = DataFrame.apply(lambda row: row['HMidfield'] - row['AMidfield'], axis = 1)
-    DataFrame['Defense'] = DataFrame.apply(lambda row: row['HDefense'] - row['ADefense'], axis = 1)
-
-    return DataFrame
-
-
-'''-----------------------------------     Adding Goal Difference as a Feature  --------------------------------------------'''
-
-## Creating a function that computes the columns "HTGD" ( Home Team Goal Difference ) and "ATGD" ( Away Team Goal Difference ) .
+'''-----------------------------------     Adding Total Position Difference as a Feature  --------------------------------------------'''
+## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  .
 def computeTGD(DataFrame) :
     
-    ## Initialising the values contained in the coloumns "HTGD" and "ATGD" . (Goal Difference)
-    DataFrame['HTGD'] = np.nan
-    DataFrame['ATGD'] = np.nan
+    ## Initialising the values contained in the coloumns "home_team_total_position_difference" and "away_team_total_position_difference" 
+    DataFrame['home_team_total_position_difference'] = np.nan
+    DataFrame['away_team_total_position_difference'] = np.nan
     
     ## Creating a list of all the teams that played in that season .
-    Teams = list((DataFrame).HomeTeam.unique())
+    Teams = list((DataFrame).home_team.unique())
+
+    number_teams = len(Teams)
 
     ## Creating a Temporary DataFrame which consists of the records of the matches teamwise .
-    for z in range(0, 20):
+    for z in range(0, number_teams):
+
+        matches_played = ((DataFrame['home_team'] == Teams[z]) | (DataFrame['away_team'] == Teams[z])).sum()
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[ (DataFrame['HomeTeam'] == str(Teams[z]) ) | ( DataFrame['AwayTeam'] == str(Teams[z])) ]
+        tempDF = DataFrame[ (DataFrame['home_team'] == str(Teams[z]) ) | ( DataFrame['away_team'] == str(Teams[z])) ]
 
         ## Creating a list which contains "Matchwise Goal Difference" for the team under observation .
         MGDList = []
 
         for index, row in tempDF.iterrows():
 
-            if (Teams[z] == row['HomeTeam']):
-                MGDList.append(row['MHTGD'])
+            if (Teams[z] == row['home_team']):
+                MGDList.append(row['match_hometeam_position_difference'])
 
-            elif (Teams[z] == row['AwayTeam']):
-                MGDList.append(row['MATGD'])
+            elif (Teams[z] == row['away_team']):
+                MGDList.append(row['match_awayteam_position_difference'])
 
         ## Creating a list which contains "Goal Difference" for the team under observation before coming into each match.
         GDList = []
 
-        for i in range(0, 38):
+        for i in range(0, matches_played):
             
             ## When the team has played no match.
             if (i == 0):
@@ -146,7 +65,7 @@ def computeTGD(DataFrame) :
 
 
         ## We will now normalise the Goal Difference.
-        for m in range(0, 38):
+        for m in range(0, matches_played):
 
             GDList[m] /= 100
 
@@ -161,23 +80,23 @@ def computeTGD(DataFrame) :
         for index, row in tempDF.iterrows():
             
             ## If team was Home Team.
-            if (Teams[z] == row['HomeTeam']):
+            if (Teams[z] == row['home_team']):
                  indexHome.append(index)
                     
             ## If team was Away Team.
-            elif (Teams[z] == row['AwayTeam']):
+            elif (Teams[z] == row['away_team']):
                 indexAway.append(index)
 
         ## Appending the appropriate "Goal Difference" values to the dataframe .
-        for j in range(0, 38):
+        for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
-                DataFrame['HTGD'][gameIndices[j]] = GDList[j]
+                DataFrame['home_team_total_position_difference'][gameIndices[j]] = GDList[j]
             elif (gameIndices[j] in indexAway):
-                DataFrame['ATGD'][gameIndices[j]] = GDList[j]
+                DataFrame['away_team_total_position_difference'][gameIndices[j]] = GDList[j]
 
-    ## Filling in the coloumns for "GD".
-    DataFrame['GD'] = DataFrame.apply(lambda row: row['HTGD'] - row['ATGD'], axis = 1)
+    ## Filling in the columns for "GD".
+    DataFrame['home_away_total_position_differential'] = DataFrame.apply(lambda row: row['home_team_total_position_difference'] - row['away_team_total_position_difference'], axis = 1)
 
 
 ''''-----------------------------------     Adding KPP as a Feature  --------------------------------------------'''
@@ -190,7 +109,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
     k = slidingWindowParameter
 
     ## Creating a list of all the teams that played in that season.
-    Teams = list((DataFrame).HomeTeam.unique())
+    Teams = list((DataFrame).home_team.unique())
     
     ## Initialising the values contained in the coloumns "HGKPP , HCKPP , HSTKPP" and "AGKPP , ACKPP , ASTKPP". (KPP Features).
     DataFrame['HGKPP'] = np.nan
@@ -204,7 +123,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
     for z in range(0, 20):
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[(DataFrame['HomeTeam'] == str(Teams[z])) | ( DataFrame['AwayTeam'] == str(Teams[z]))]
+        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['AwayTeam'] == str(Teams[z]))]
 
         ## Creating a list which contains Goals, Corners and Number of Shots on Target for the team under observation match-wise.
         Goals = []
@@ -213,7 +132,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
 
         for index, row in tempDF.iterrows():
     
-            if (Teams[z] == row['HomeTeam']):
+            if (Teams[z] == row['home_team']):
                 Goals.append(float(row['FTHG']))
                 Corners.append(float(row['HC']))
                 shotsonTarget.append(float(row['HST']))
@@ -256,7 +175,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
         ## Segregate home and away match indices.
         for index, row in tempDF.iterrows():
             
-            if (Teams[z] == row['HomeTeam']):
+            if (Teams[z] == row['home_team']):
                  indexHome.append(index)
 
             elif (Teams[z] == row['AwayTeam']):
@@ -292,7 +211,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
     k = slidingWindowParameter
 
     ## Creating a list of all the teams that played in that season.
-    Teams = list((DataFrame).HomeTeam.unique())
+    Teams = list((DataFrame).home_team.unique())
     
     ## Initialsing the values in the coloumns "HSt, ASt , HStWeigted , AStWeigted".
     DataFrame['HSt'] = np.nan
@@ -304,7 +223,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
     for z in range(0, 20):
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[(DataFrame['HomeTeam'] == str(Teams[z])) | ( DataFrame['AwayTeam'] == str(Teams[z]))]
+        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['AwayTeam'] == str(Teams[z]))]
     
         ## Creating a list which contains the points assigned to each team after their match. 
         ## 0 - Loss
@@ -319,7 +238,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
         
         for index , row in tempDF.iterrows():
             
-            if (Teams[z] == row['HomeTeam']):
+            if (Teams[z] == row['home_team']):
                 if (row['FTR'] == 'A') :
                     matchPoints.append(0.0)
                 elif (row['FTR'] == 'D') :
@@ -370,7 +289,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
         ## Segregate home and away match indices.
         for index, row in tempDF.iterrows():
 
-            if (Teams[z] == row['HomeTeam']):
+            if (Teams[z] == row['home_team']):
                  indexHome.append(index)
 
             elif (Teams[z] == row['AwayTeam']):
@@ -415,7 +334,7 @@ def computeForm(DataFrame, stealingFraction):
     matchCounterDict = {}
 
     ## Creating a list of all the teams that played in that season .
-    Teams = list((dataFrame).HomeTeam.unique())
+    Teams = list((dataFrame).home_team.unique())
 
     for teamName in Teams :
 
@@ -425,7 +344,7 @@ def computeForm(DataFrame, stealingFraction):
 
         ## For each team playing in the season, create a temporary dataframe to record the match numbers of each team.
         ## Create a temporary dataframe for the team under consideration.
-        tempDF = DataFrame[(DataFrame['HomeTeam'] == str(teamName)) | ( DataFrame['AwayTeam'] == str(teamName))]
+        tempDF = DataFrame[(DataFrame['home_team'] == str(teamName)) | ( DataFrame['AwayTeam'] == str(teamName))]
 
         ## Assigning match indices list to the relevant team.
         teamMatchLookup[teamName] =  tempDF.index.tolist()
@@ -440,42 +359,42 @@ def computeForm(DataFrame, stealingFraction):
             break
 
         ## Update match counter for the playing teams.
-        matchCounterDict[row['HomeTeam']] += 1
+        matchCounterDict[row['home_team']] += 1
         matchCounterDict[row['AwayTeam']] += 1
 
         ## Case where home team wins. Since the home team wins here, a positive update is given to the home team and a negative update is given to the away team.        
         if (row['FTR'] == 'H'):
 
             ## Form values of the teams before coming into the match.
-            prevHomeForm = gFormDict[row['HomeTeam']]
+            prevHomeForm = gFormDict[row['home_team']]
             prevAwayForm = gFormDict[row['AwayTeam']]
 
             ## Next match index of the Home and Away Team.
-            nextMatchH = teamMatchLookup[row['HomeTeam']][matchCounterDict[row['HomeTeam']]]
+            nextMatchH = teamMatchLookup[row['home_team']][matchCounterDict[row['home_team']]]
             nextMatchA = teamMatchLookup[row['AwayTeam']][matchCounterDict[row['AwayTeam']]]
     
             ## Since the home team wins here, a positive update is given to the home team and a negative update is given to the away team. 
-            homeUpdate = gFormDict[row['HomeTeam']] + k * gFormDict[row['AwayTeam']]
+            homeUpdate = gFormDict[row['home_team']] + k * gFormDict[row['AwayTeam']]
             awayUpdate = gFormDict[row['AwayTeam']] - k * gFormDict[row['AwayTeam']]
 
             ## Selecting next match record for the current Home Team.
             matchInfoH = DataFrame.iloc[[nextMatchH]]
 
             ## Check whether current Home Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoH['HomeTeam'][nextMatchH] == row['HomeTeam']):
+            if (matchInfoH['home_team'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'HForm'] = homeUpdate
 
-            elif (matchInfoH['AwayTeam'][nextMatchH] == row['HomeTeam']):
+            elif (matchInfoH['AwayTeam'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'AForm'] = homeUpdate
 
             ## Update value in the dictionary.
-            gFormDict[row['HomeTeam']] = homeUpdate
+            gFormDict[row['home_team']] = homeUpdate
 
             ## Selecting next match record for the current Away Team.
             matchInfoA = DataFrame.iloc[[nextMatchA]]
 
             ## Check whether current Away Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoA['HomeTeam'][nextMatchA] == row['AwayTeam']):
+            if (matchInfoA['home_team'][nextMatchA] == row['AwayTeam']):
                 DataFrame.loc[nextMatchA, 'HForm'] = awayUpdate
 
             elif (matchInfoA['AwayTeam'][nextMatchA] == row['AwayTeam']):
@@ -489,35 +408,35 @@ def computeForm(DataFrame, stealingFraction):
         if (row['FTR'] == 'A'):
 
             ## Form values of the teams before coming into the match.
-            prevHomeForm = gFormDict[row['HomeTeam']]
+            prevHomeForm = gFormDict[row['home_team']]
             prevAwayForm = gFormDict[row['AwayTeam']]
         
             ## Next match index of the Home and Away Team.
-            nextMatchH = teamMatchLookup[row['HomeTeam']][matchCounterDict[row['HomeTeam']]]
+            nextMatchH = teamMatchLookup[row['home_team']][matchCounterDict[row['home_team']]]
             nextMatchA = teamMatchLookup[row['AwayTeam']][matchCounterDict[row['AwayTeam']]]
 
             ## Since the away team wins here, a positive update is given to the away team and a negative update is given to the home team.        
-            homeUpdate = gFormDict[row['HomeTeam']] - k * gFormDict[row['HomeTeam']]
-            awayUpdate = gFormDict[row['AwayTeam']] + k * gFormDict[row['HomeTeam']]
+            homeUpdate = gFormDict[row['home_team']] - k * gFormDict[row['home_team']]
+            awayUpdate = gFormDict[row['AwayTeam']] + k * gFormDict[row['home_team']]
 
             ## Selecting next match for the current Home Team.
             matchInfoH = DataFrame.iloc[[nextMatchH]]
 
             ## Check whether current Home Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoH['HomeTeam'][nextMatchH] == row['HomeTeam']):
+            if (matchInfoH['home_team'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'HForm'] = homeUpdate
 
-            elif (matchInfoH['AwayTeam'][nextMatchH] == row['HomeTeam']):
+            elif (matchInfoH['AwayTeam'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'AForm'] = homeUpdate
 
             ## Update value in the dictionary.
-            gFormDict[row['HomeTeam']] = homeUpdate
+            gFormDict[row['home_team']] = homeUpdate
 
             ## Selecting next match for the current Away Team.
             matchInfoA = DataFrame.iloc[[nextMatchA]]
 
             ## Check whether current Away Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoA['HomeTeam'][nextMatchA] == row['AwayTeam']):            
+            if (matchInfoA['home_team'][nextMatchA] == row['AwayTeam']):            
                 DataFrame.loc[nextMatchA, 'HForm'] = awayUpdate
 
             elif (matchInfoA['AwayTeam'][nextMatchA] == row['AwayTeam']):
@@ -530,35 +449,35 @@ def computeForm(DataFrame, stealingFraction):
         if (row['FTR'] == 'D'):
 
             # Form values of the teams before coming into the match.
-            prevHomeForm = gFormDict[row['HomeTeam']]
+            prevHomeForm = gFormDict[row['home_team']]
             prevAwayForm = gFormDict[row['AwayTeam']]
     
             ## Next match index of the Home and Away Team.
-            nextMatchH = teamMatchLookup[row['HomeTeam']][matchCounterDict[row['HomeTeam']]]
+            nextMatchH = teamMatchLookup[row['home_team']][matchCounterDict[row['home_team']]]
             nextMatchA = teamMatchLookup[row['AwayTeam']][matchCounterDict[row['AwayTeam']]]
 
             ## Form Updates.
-            homeUpdate = gFormDict[row['HomeTeam']] - k * ((gFormDict[row['HomeTeam']]) - (gFormDict[row['AwayTeam']]))
-            awayUpdate = gFormDict[row['AwayTeam']] - k * ((gFormDict[row['AwayTeam']]) - (gFormDict[row['HomeTeam']]))
+            homeUpdate = gFormDict[row['home_team']] - k * ((gFormDict[row['home_team']]) - (gFormDict[row['AwayTeam']]))
+            awayUpdate = gFormDict[row['AwayTeam']] - k * ((gFormDict[row['AwayTeam']]) - (gFormDict[row['home_team']]))
 
             ## Selecting next match for the current Home Team.
             matchInfoH = DataFrame.iloc[[nextMatchH]]
 
             ## Check whether current Home Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoH['HomeTeam'][nextMatchH] == row['HomeTeam']):
+            if (matchInfoH['home_team'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'HForm'] = homeUpdate
 
-            elif (matchInfoH['AwayTeam'][nextMatchH] == row['HomeTeam']):
+            elif (matchInfoH['AwayTeam'][nextMatchH] == row['home_team']):
                 DataFrame.loc[nextMatchH, 'AForm'] = homeUpdate
 
             ## Update value in the dictionary.
-            gFormDict[row['HomeTeam']] = homeUpdate
+            gFormDict[row['home_team']] = homeUpdate
 
             ## Selecting next match for the current Away Team.
             matchInfoA = DataFrame.iloc[[nextMatchA]]
 
             ## Check whether current Away Team is Home or Away in their next match and update Form accordingly.
-            if (matchInfoA['HomeTeam'][nextMatchA] == row['AwayTeam']):
+            if (matchInfoA['home_team'][nextMatchA] == row['AwayTeam']):
                 DataFrame.loc[nextMatchA, 'HForm'] = awayUpdate
 
             elif (matchInfoA['AwayTeam'][nextMatchA] == row['AwayTeam']):
@@ -574,26 +493,19 @@ def computeForm(DataFrame, stealingFraction):
 ## Computing features for all the data.
 for i, dataFrame in enumerate(DataFrames):
     
-    dataFrame['MHTGD'] = dataFrame.apply(lambda row: row['FTHG'] - row['FTAG'], axis = 1)
-    dataFrame['MATGD'] = dataFrame.apply(lambda row: row['FTAG'] - row['FTHG'], axis = 1)
+    dataFrame['match_hometeam_position_difference'] = dataFrame.apply(lambda row: row['home_current_pos'] - row['away_current_pos'], axis = 1)
+    dataFrame['match_awayteam_position_difference'] = dataFrame.apply(lambda row: row['away_current_pos'] - row['home_current_pos'], axis = 1)
     
     ## Computing the features.
     computeTGD(dataFrame)
-    computeKPP(dataFrame, 6)
-    computeStreak(dataFrame, 6)
-    computeForm(dataFrame, 0.33)
+    #computeKPP(dataFrame, 6)
+    #computeStreak(dataFrame, 6)
+    #computeForm(dataFrame, 0.33)
 
-    print(i)
-
-## Adding the fifa Ratings to all the dataframes.
-dataFrameList = []
-
-for dataFrame in DataFrames:
-    frameFifaRatings = addFifaRatings(dataFrame)
-    dataFrameList.append(frameFifaRatings)
+    #print(i)
 
 ## Concatening all the dataframes together.
-DataFrame = pd.concat(dataFrameList)
+DataFrame = pd.concat(DataFrames)
 
 ## Saving the newly engineered dataset.
-DataFrame.to_csv('./EngineeredData.csv', sep = ',', index = False)
+DataFrame.to_csv('Article_1_Dataset_2/Dataset/concatenated.csv', sep = ',', index = False)
