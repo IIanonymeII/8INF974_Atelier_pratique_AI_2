@@ -136,11 +136,11 @@ def computeKPP(DataFrame, slidingWindowParameter):
     
             if (Teams[z] == row['home_team']):
                 Positions.append(float(row['home_current_pos']))
-                RestTimes.append(float(row['home_team_rest_time ']))
+                RestTimes.append(float(row['home_team_rest_time']))
 
-            elif (Teams[z] == row['AwayTeam']):
+            elif (Teams[z] == row['away_team']):
                 Positions.append(float(row['away_current_pos']))
-                RestTimes.append(float(row['away_team_rest_time ']))
+                RestTimes.append(float(row['away_team_rest_time']))
 
         ## Creating lists to hold values for the corresponding KPP Features.
         # Since these features will be non existent for the first k matches of each team, fill Nan for the first k values.
@@ -182,12 +182,12 @@ def computeKPP(DataFrame, slidingWindowParameter):
         for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
-                DataFrame['k_past_home_current_pos'][gameIndices[j]] = positionsKPP[j]
-                DataFrame['k_past_home_team_rest_time'][gameIndices[j]] = resttimesKPP[j]
+                DataFrame['k_past_position_home'][gameIndices[j]] = positionsKPP[j]
+                DataFrame['k_past_rest_time_home'][gameIndices[j]] = resttimesKPP[j]
 
             elif (gameIndices[j] in indexAway):
-                DataFrame['k_past_away_current_pos'][gameIndices[j]] = positionsKPP[j]
-                DataFrame['k_past_away_team_rest_time'][gameIndices[j]] = resttimesKPP[j]
+                DataFrame['k_past_position_away'][gameIndices[j]] = positionsKPP[j]
+                DataFrame['k_past_rest_time_away'][gameIndices[j]] = resttimesKPP[j]
         
     
     ## Filling in the coloumns for "GKPP, CKPP, STKPP".
@@ -206,18 +206,22 @@ def computeStreak(DataFrame, slidingWindowParameter):
 
     ## Creating a list of all the teams that played in that season.
     Teams = list((DataFrame).home_team.unique())
+
+    number_teams = len(Teams)
     
     ## Initialsing the values in the coloumns "HSt, ASt , HStWeigted , AStWeigted".
-    DataFrame['HSt'] = np.nan
-    DataFrame['ASt'] = np.nan
-    DataFrame['HStWeighted'] = np.nan
-    DataFrame['AStWeighted'] = np.nan
+    DataFrame['Home_St'] = np.nan
+    DataFrame['Away_St'] = np.nan
+    DataFrame['Home_StWeighted'] = np.nan
+    DataFrame['Away_StWeighted'] = np.nan
     
     ## Creating a Temporary DataFrame which consists of the records of the matches teamwise.
-    for z in range(0, 20):
+    for z in range(0, number_teams):
+
+        matches_played = ((DataFrame['home_team'] == Teams[z]) | (DataFrame['away_team'] == Teams[z])).sum()
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['AwayTeam'] == str(Teams[z]))]
+        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['away_team'] == str(Teams[z]))]
     
         ## Creating a list which contains the points assigned to each team after their match. 
         ## 0 - Loss
@@ -233,21 +237,17 @@ def computeStreak(DataFrame, slidingWindowParameter):
         for index , row in tempDF.iterrows():
             
             if (Teams[z] == row['home_team']):
-                if (row['FTR'] == 'A') :
-                    matchPoints.append(0.0)
-                elif (row['FTR'] == 'D') :
-                    matchPoints.append(1.0)
-                elif (row['FTR'] == 'H') :
+                if (row['result'] == 1) :
                     matchPoints.append(3.0)
+                elif (row['result'] == 0) :
+                    matchPoints.append(0)
 
-            elif (Teams[z] == row['AwayTeam']):
-                if (row['FTR'] == 'H') :
+            elif (Teams[z] == row['away_team']):
+                if (row['result'] == 1) :
                     matchPoints.append(0.0)
-                elif (row['FTR'] == 'D') :
-                    matchPoints.append(1.0)
-                elif (row['FTR'] == 'A') :
+                elif (row['result'] == 0) :
                     matchPoints.append(3.0)
-        
+ 
         ## Creating lists to hold values for the corresponding Streak and Weighted Streak Features.
         ## Since these features will be non existent for the first k matches of each team, fill Nan for the first k values.
         streak = [np.nan] * k
@@ -257,7 +257,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
         ## The number of computations performed will be (n + 1 - k) where :
         ## n = number of matches in the season for each team (38).
         ## k = sliding window hyper-parameter.
-        for i in range(0, (39 - k)):
+        for i in range(0, (matches_played + 1 - k)):
 
             ## Obtaining the slice of records to be observed.
             matchPointsSlice = matchPoints[i : (i + k)]
@@ -286,24 +286,24 @@ def computeStreak(DataFrame, slidingWindowParameter):
             if (Teams[z] == row['home_team']):
                  indexHome.append(index)
 
-            elif (Teams[z] == row['AwayTeam']):
+            elif (Teams[z] == row['away_team']):
                 indexAway.append(index)
 
         ## Appending the appropriate "KPP" values to the dataframe.
-        for j in range(0, 38):
+        for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
-                DataFrame['HSt'][gameIndices[j]] = streak[j]
-                DataFrame['HStWeighted'][gameIndices[j]] = weightedStreak[j]
+                DataFrame['Home_St'][gameIndices[j]] = streak[j]
+                DataFrame['Home_StWeighted'][gameIndices[j]] = weightedStreak[j]
 
             elif (gameIndices[j] in indexAway):
-                DataFrame['ASt'][gameIndices[j]] = streak[j]
-                DataFrame['AStWeighted'][gameIndices[j]] = weightedStreak[j]
+                DataFrame['Away_St'][gameIndices[j]] = streak[j]
+                DataFrame['Away_StWeighted'][gameIndices[j]] = weightedStreak[j]
                 
     
     ## Filling in the coloumns for "Streak and WeightedStreak".
-    DataFrame['Streak'] = DataFrame.apply(lambda row: row['HSt'] - row['ASt'], axis = 1)
-    DataFrame['WeightedStreak'] = DataFrame.apply(lambda row: row['HStWeighted'] - row['AStWeighted'], axis = 1)
+    DataFrame['Streak'] = DataFrame.apply(lambda row: row['Home_St'] - row['Away_St'], axis = 1)
+    DataFrame['WeightedStreak'] = DataFrame.apply(lambda row: row['Home_StWeighted'] - row['Away_StWeighted'], axis = 1)
 
 ''''-----------------------------------     Adding Form as a Feature  --------------------------------------------'''
 
@@ -487,13 +487,18 @@ def computeForm(DataFrame, stealingFraction):
 ## Computing features for all the data.
 for i, dataFrame in enumerate(DataFrames):
     
-    dataFrame['HomeAway_ Position_Differntial'] = dataFrame.apply(lambda row: row['home_current_pos'] - row['away_current_pos'], axis = 1)
+    dataFrame['HomeAway_Position_Differntial'] = dataFrame.apply(lambda row: row['home_current_pos'] - row['away_current_pos'], axis = 1)
+    dataFrame['HomeAway_Form_Differntial'] = dataFrame.apply(lambda row: row['home_team_form'] - row['away_team_form'], axis = 1)
+    dataFrame['HomeAway_Average_Points_Differntial'] = dataFrame.apply(lambda row: row['home_team_av_points'] - row['away_team_av_points'], axis = 1)
+    dataFrame['HomeAway_Average_Points_Conceded_Differntial'] = dataFrame.apply(lambda row: row['home_team_av_points_conceded'] - row['away_team_av_points_conceded'], axis = 1)
+    dataFrame['HomeAway_Win_Precentage_Differntial'] = dataFrame.apply(lambda row: row['home_win_percentage'] - row['away_win_percentage'], axis = 1)
+
     #dataFrame['match_awayteam_position_difference'] = dataFrame.apply(lambda row: row['away_current_pos'] - row['home_current_pos'], axis = 1)
     
     ## Computing the features.
     #computeTGD(dataFrame)
-    #computeKPP(dataFrame, 6)
-    #computeStreak(dataFrame, 6)
+    computeKPP(dataFrame, 4)
+    computeStreak(dataFrame, 4)
     #computeForm(dataFrme, 0.33)
 
     #print(i)
