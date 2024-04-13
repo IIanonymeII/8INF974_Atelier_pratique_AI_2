@@ -22,15 +22,16 @@ def trainTestSplit(Set):
 	## Getting a list of the unique seasons.
 	seasonNames = list(DataFrame.Season.unique())
 	dataFramesList = []
-
+	'''
 	for season in seasonNames:
 		
 		## Creating a Temporary DataFrame season-wise.
 		tempDF = DataFrame[ (DataFrame['Season'] == (season) )]
 		tempDF = tempDF.dropna(subset = nanFeatures)
 		dataFramesList.append(tempDF)
+	'''
 
-	DataFrame = pd.concat(dataFramesList) 
+	DataFrame = DataFrame.dropna(subset=nanFeatures)
 
 	## Splitting the data into Training and Testing splits.
 	
