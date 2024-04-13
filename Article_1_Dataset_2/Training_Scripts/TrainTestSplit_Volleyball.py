@@ -6,7 +6,7 @@ warnings.filterwarnings('ignore')
 
 def trainTestSplit(Set):
 
-	DataFrame = pd.read_csv('Dataset\concatenated.csv', delimiter = ',')
+	DataFrame = pd.read_csv('..\Dataset\concatenated.csv', delimiter = ',')
 
 	## Creating a list of unwanted features
 	unwanted = ["Date","month", "year", "away_team", "home_team"]
@@ -22,16 +22,16 @@ def trainTestSplit(Set):
 	## Getting a list of the unique seasons.
 	seasonNames = list(DataFrame.Season.unique())
 	dataFramesList = []
-	'''
+	
 	for season in seasonNames:
 		
 		## Creating a Temporary DataFrame season-wise.
 		tempDF = DataFrame[ (DataFrame['Season'] == (season) )]
 		tempDF = tempDF.dropna(subset = nanFeatures)
 		dataFramesList.append(tempDF)
-	'''
+	
 
-	DataFrame = DataFrame.dropna(subset=nanFeatures)
+	DataFrame = pd.concat(dataFramesList)
 
 	## Splitting the data into Training and Testing splits.
 	
@@ -53,7 +53,8 @@ def trainTestSplit(Set):
 	X.drop(['result'], axis = 1, inplace = True)
 
 	## Now , we will choose the first 11 seasons as our Training Set and the final 2 as Testing Set .
-	XTrain = X[ (X['Season'] == '2010-2011') | (X['Season'] == '2011-2012') | (X['Season'] == '2012-2013') | (X['Season'] == '2013-2014') | (X['Season'] == '2014-2015') | (X['Season'] == '2015-2016')] 
+	XTrain = X[ (X['Season'] == '2010-2011') | (X['Season'] == '2011-2012') | (X['Season'] == '2012-2013') | (X['Season'] == '2013-2014') | 
+			(X['Season'] == '2014-2015') | (X['Season'] == '2015-2016')| (X['Season'] == '2016-2017')] 
 	XTest = X[ (X['Season'] == '2017-2018') | (X['Season'] == '2018-2019')]
 
 	## Now , we dont need the "Season" coloumn so drop it .
