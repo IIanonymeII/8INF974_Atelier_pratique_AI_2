@@ -16,7 +16,7 @@ print(DataFrames[2].head(5))
 
 a = 5
 
-'''-----------------------------------     Adding Total Position Difference as a Feature  --------------------------------------------'''
+'''-----------------------------------     Adding Goal Difference as a Feature  --------------------------------------------'''
 ## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  
 def computeTGD(DataFrame) :
     
@@ -103,7 +103,7 @@ def computeTGD(DataFrame) :
 
 ''''-----------------------------------     Adding KPP as a Feature  --------------------------------------------'''
 
-## Creating a function which computes the KPP (K-Past Performance) feature for Goals, Corners and Shots on Target.
+## Creating a function which computes the KPP (K-Past Performance) feature for Points, Assists and Free Throws .
 
 def computeKPP(DataFrame, slidingWindowParameter):
     
@@ -111,44 +111,50 @@ def computeKPP(DataFrame, slidingWindowParameter):
     k = slidingWindowParameter
 
     ## Creating a list of all the teams that played in that season.
-    Teams = list((DataFrame).home_team.unique())
+    Teams = list((DataFrame).HOME_TEAM_ID.unique())
 
     number_teams = len(Teams)
     
     ## Initialising the values contained in the coloumns "HGKPP , HCKPP , HSTKPP" and "AGKPP , ACKPP , ASTKPP". (KPP Features).
-    DataFrame['k_past_position_home'] = np.nan
-    DataFrame['k_past_rest_time_home'] = np.nan
-    
-    DataFrame['k_past_position_away'] = np.nan
-    DataFrame['k_past_rest_time_away'] = np.nan
+    DataFrame['k_past_points_home'] = np.nan
+    DataFrame['k_past_assists_home'] = np.nan
+    DataFrame['k_past_rebounds_home'] = np.nan
+
+    DataFrame['k_past_points_away'] = np.nan
+    DataFrame['k_past_assists_away'] = np.nan
+    DataFrame['k_past_rebounds_away'] = np.nan
 
     ## Creating a Temporary DataFrame which consists of the records of the matches teamwise.
     for z in range(0, number_teams):
 
-        matches_played = ((DataFrame['home_team'] == Teams[z]) | (DataFrame['away_team'] == Teams[z])).sum()
+        matches_played = ((DataFrame['HOME_TEAM_ID'] == Teams[z]) | (DataFrame['VISITOR_TEAM_ID'] == Teams[z])).sum()
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['away_team'] == str(Teams[z]))]
+        tempDF = DataFrame[(DataFrame['HOME_TEAM_ID'] == Teams[z]) | ( DataFrame['VISITOR_TEAM_ID'] == Teams[z])]
 
         ## Creating a list which contains Goals, Corners and Number of Shots on Target for the team under observation match-wise.
-        Positions = []
-        RestTimes = []
+        Points = []
+        Assists = []
+        Rebounds = []
 
         for index, row in tempDF.iterrows():
     
-            if (Teams[z] == row['home_team']):
-                Positions.append(float(row['home_current_pos']))
-                RestTimes.append(float(row['home_team_rest_time']))
+            if (Teams[z] == row['HOME_TEAM_ID']):
+                Points.append(float(row['PTS_home']))
+                Assists.append(float(row['AST_home']))
+                Rebounds.append(float(row['REB_home']))
 
-            elif (Teams[z] == row['away_team']):
-                Positions.append(float(row['away_current_pos']))
-                RestTimes.append(float(row['away_team_rest_time']))
+            elif (Teams[z] == row['VISITOR_TEAM_ID']):
+                Points.append(float(row['PTS_away']))
+                Assists.append(float(row['AST_away']))
+                Rebounds.append(float(row['REB_away']))
 
         ## Creating lists to hold values for the corresponding KPP Features.
         # Since these features will be non existent for the first k matches of each team, fill Nan for the first k values.
-        positionsKPP = [np.nan] * k
-        resttimesKPP = [np.nan] * k
-        
+        pointsKPP = [np.nan] * k
+        assistsKPP = [np.nan] * k
+        reboundsKPP = [np.nan] * k
+
         ## Adding appropriate values to the list.
         ## The number of computations performed will be (n + 1 - k) where :
         ## n = number of matches in the season for each team (38).
@@ -157,12 +163,14 @@ def computeKPP(DataFrame, slidingWindowParameter):
 
             ## Obtaining the slice of records to be observed.
             ## Sum the slice of records and normalize it by k.
-            positionSliceSum = sum(Positions[i : (i + k)])/k
-            resttimesSliceSum = sum(RestTimes[i : (i + k)])/k
+            pointsSliceSum = sum(Points[i : (i + k)])/k
+            assistsSliceSum = sum(Assists[i : (i + k)])/k
+            reboundsSliceSum = sum(Rebounds[i : (i + k)])/k
 
             ## Appending to the list of the corresponding KPP features.
-            positionsKPP.append(positionSliceSum)
-            resttimesKPP.append(resttimesSliceSum)
+            pointsKPP.append(pointsSliceSum)
+            assistsKPP.append(assistsSliceSum)
+            reboundsKPP.append(reboundsSliceSum)
             
         ## Creating a list for the index values of the games contained in the tempDF.
         gameIndices = tempDF.index.tolist()
@@ -174,28 +182,29 @@ def computeKPP(DataFrame, slidingWindowParameter):
         ## Segregate home and away match indices.
         for index, row in tempDF.iterrows():
             
-            if (Teams[z] == row['home_team']):
+            if (Teams[z] == row['HOME_TEAM_ID']):
                  indexHome.append(index)
 
-            elif (Teams[z] == row['away_team']):
+            elif (Teams[z] == row['VISITOR_TEAM_ID']):
                 indexAway.append(index)
 
         ## Appending the appropriate "KPP" values to the dataframe.
         for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
-                DataFrame['k_past_position_home'][gameIndices[j]] = positionsKPP[j]
-                DataFrame['k_past_rest_time_home'][gameIndices[j]] = resttimesKPP[j]
+                DataFrame['k_past_points_home'][gameIndices[j]] = pointsKPP[j]
+                DataFrame['k_past_assists_home'][gameIndices[j]] = assistsKPP[j]
+                DataFrame['k_past_rebounds_home'][gameIndices[j]] = reboundsKPP[j]
 
             elif (gameIndices[j] in indexAway):
-                DataFrame['k_past_position_away'][gameIndices[j]] = positionsKPP[j]
-                DataFrame['k_past_rest_time_away'][gameIndices[j]] = resttimesKPP[j]
+                DataFrame['k_past_points_away'][gameIndices[j]] = pointsKPP[j]
+                DataFrame['k_past_assists_away'][gameIndices[j]] = assistsKPP[j]
+                DataFrame['k_past_rebounds_away'][gameIndices[j]] = reboundsKPP[j]
         
-    
     ## Filling in the coloumns for "GKPP, CKPP, STKPP".
-    DataFrame['k_past_positions_differential'] = DataFrame.apply(lambda row: row['k_past_position_home'] - row['k_past_position_away'], axis = 1)
-    DataFrame['k_past_resttimes_differential'] = DataFrame.apply(lambda row: row['k_past_rest_time_home'] - row['k_past_rest_time_away'], axis = 1)
-
+    DataFrame['k_past_points_diff'] = DataFrame.apply(lambda row: row['k_past_points_home'] - row['k_past_points_away'], axis = 1)
+    DataFrame['k_past_assists_diff'] = DataFrame.apply(lambda row: row['k_past_assists_home'] - row['k_past_assists_away'], axis = 1)
+    DataFrame['k_past_rebounds_diff'] = DataFrame.apply(lambda row: row['k_past_rebounds_home'] - row['k_past_rebounds_away'], axis = 1)
 
 ''''-----------------------------------     Adding Streak and Weighted Streak as a Feature  --------------------------------------------'''
 
@@ -223,7 +232,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
         matches_played = ((DataFrame['home_team'] == Teams[z]) | (DataFrame['away_team'] == Teams[z])).sum()
 
         ## Creating a Temporary DataFrame where the team was either "Home" or "Away" .
-        tempDF = DataFrame[(DataFrame['home_team'] == str(Teams[z])) | ( DataFrame['away_team'] == str(Teams[z]))]
+        tempDF = DataFrame[(DataFrame['home_team'] == Teams[z]) | ( DataFrame['away_team'] == Teams[z])]
     
         ## Creating a list which contains the points assigned to each team after their match. 
         ## 0 - Loss
@@ -503,7 +512,7 @@ for i, dataFrame in enumerate(DataFrames):
     
     ## Computing the features.
     #computeTGD(dataFrame)
-    #computeKPP(dataFrame, 4)
+    computeKPP(dataFrame, 4)
     #computeStreak(dataFrame, 4)
     #computeForm(dataFrme, 0.33)
 
