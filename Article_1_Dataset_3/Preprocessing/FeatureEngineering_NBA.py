@@ -14,6 +14,8 @@ print(DataFrames[0]["Season"])
 
 print(DataFrames[2].head(5))
 
+a = 5
+
 '''-----------------------------------     Adding Total Position Difference as a Feature  --------------------------------------------'''
 ## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  .
 def computeTGD(DataFrame) :
