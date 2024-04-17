@@ -2,18 +2,17 @@
 import warnings
 import numpy as np
 import pandas as pd 
-
+from collections import OrderedDict
+from InputData import loadDataFrameList
 
 warnings.filterwarnings('ignore')
 
-## Loading the list of DataFrames from DataPreprocessing.
-DataFrame = pd.read_csv('Article_1_Dataset_3\Data\games.csv')
+## Loading the list of dataframes from DataPreprocessing.
+DataFrames = loadDataFrameList()
 
-Dataframe_dif = pd.DataFrame()
+print(DataFrames[0]["Season"])
 
-print(DataFrame.head(5))
-
-a = 5
+print(DataFrames[2].head(5))
 
 '''-----------------------------------     Adding Total Position Difference as a Feature  --------------------------------------------'''
 ## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  .
@@ -88,7 +87,7 @@ def computeTGD(DataFrame) :
             elif (Teams[z] == row['away_team']):
                 indexAway.append(index)
 
-        ## Appending the appropriate "Goal Difference" values to the DataFrame .
+        ## Appending the appropriate "Goal Difference" values to the dataframe .
         for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
@@ -179,7 +178,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
             elif (Teams[z] == row['away_team']):
                 indexAway.append(index)
 
-        ## Appending the appropriate "KPP" values to the DataFrame.
+        ## Appending the appropriate "KPP" values to the dataframe.
         for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
@@ -290,7 +289,7 @@ def computeStreak(DataFrame, slidingWindowParameter):
             elif (Teams[z] == row['away_team']):
                 indexAway.append(index)
 
-        ## Appending the appropriate "KPP" values to the DataFrame.
+        ## Appending the appropriate "KPP" values to the dataframe.
         for j in range(0, matches_played):
 
             if (gameIndices[j] in indexHome):
@@ -329,7 +328,7 @@ def computeForm(DataFrame, stealingFraction):
     matchCounterDict = {}
 
     ## Creating a list of all the teams that played in that season .
-    Teams = list((DataFrame).home_team.unique())
+    Teams = list((dataFrame).home_team.unique())
 
     for teamName in Teams :
 
@@ -337,8 +336,8 @@ def computeForm(DataFrame, stealingFraction):
         gFormDict[teamName] = 1.0
         matchCounterDict[teamName] = 0
 
-        ## For each team playing in the season, create a temporary DataFrame to record the match numbers of each team.
-        ## Create a temporary DataFrame for the team under consideration.
+        ## For each team playing in the season, create a temporary dataframe to record the match numbers of each team.
+        ## Create a temporary dataframe for the team under consideration.
         tempDF = DataFrame[(DataFrame['home_team'] == str(teamName)) | ( DataFrame['AwayTeam'] == str(teamName))]
 
         ## Assigning match indices list to the relevant team.
@@ -486,21 +485,28 @@ def computeForm(DataFrame, stealingFraction):
 
 
 ## Computing features for all the data.
+for i, dataFrame in enumerate(DataFrames):
     
-Dataframe_dif['Points_Diff'] = DataFrame.apply(lambda row: row['PTS_home'] - row['PTS_away'], axis = 1)
-Dataframe_dif['Field Goal Percentage_Diff'] = DataFrame.apply(lambda row: row['FG_PCT_home'] - row['FG_PCT_away'], axis = 1)
-Dataframe_dif['Free Throw Percentage_Diff'] = DataFrame.apply(lambda row: row['FT_PCT_home'] - row['FT_PCT_away'], axis = 1)
-Dataframe_dif['Three Point Percentage_Diff'] = DataFrame.apply(lambda row: row['FG3_PCT_home'] - row['FG3_PCT_away'], axis = 1)
-Dataframe_dif['Assists_Diff'] = DataFrame.apply(lambda row: row['AST_home'] - row['AST_away'], axis = 1)
-Dataframe_dif['Rebounds_Diff'] = DataFrame.apply(lambda row: row['REB_home'] - row['REB_away'], axis = 1)
+    dataFrame['Field Goal Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FG_PCT_home'] - row['FG_PCT_away'], 2), axis=1)
+    dataFrame['Free Throw Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FT_PCT_home'] - row['FT_PCT_away'], 2), axis=1)
+    dataFrame['Three Point Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FG3_PCT_home'] - row['FG3_PCT_away'], 2), axis=1)
+    dataFrame['Assists_Diff'] = dataFrame.apply(lambda row: round(row['AST_home'] - row['AST_away'], 2), axis=1)
+    dataFrame['Rebounds_Diff'] = dataFrame.apply(lambda row: round(row['REB_home'] - row['REB_away'], 2), axis=1)
+    dataFrame['Rebounds_Diff'] = dataFrame.apply(lambda row: round(row['REB_home'] - row['REB_away'], 2), axis=1)
+    dataFrame['HOME_TEAM_WINS'] = dataFrame['HOME_TEAM_WINS']
 
-#DataFrame['match_awayteam_position_difference'] = DataFrame.apply(lambda row: row['away_current_pos'] - row['home_current_pos'], axis = 1)
+    #dataFrame['match_awayteam_position_difference'] = dataFrame.apply(lambda row: row['away_current_pos'] - row['home_current_pos'], axis = 1)
     
-## Computing the features.
-#computeTGD(DataFrame)
-#computeKPP(DataFrame, 4)
-#computeStreak(DataFrame, 4)
-#computeForm(DataFrame, 0.33)
+    ## Computing the features.
+    #computeTGD(dataFrame)
+    computeKPP(dataFrame, 4)
+    computeStreak(dataFrame, 4)
+    #computeForm(dataFrme, 0.33)
+
+    #print(i)
+
+## Concatening all the dataframes together.
+DataFrame = pd.concat(DataFrames)
 
 ## Saving the newly engineered dataset.
-Dataframe_dif.to_csv('Article_1_Dataset_3\Data\prepoc_dataset.csv', sep = ',', index = False)
+DataFrame.to_csv('Article_1_Dataset_2/Dataset/concatenated.csv', sep = ',', index = False)
