@@ -17,7 +17,7 @@ print(DataFrames[2].head(5))
 a = 5
 
 '''-----------------------------------     Adding Total Position Difference as a Feature  --------------------------------------------'''
-## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  .
+## Creating a function that computes the columns "home_team_total_position_difference" and "away_team_total_position_difference"  
 def computeTGD(DataFrame) :
     
     ## Initialising the values contained in the coloumns "home_team_total_position_difference" and "away_team_total_position_difference" 
@@ -199,7 +199,7 @@ def computeKPP(DataFrame, slidingWindowParameter):
 
 ''''-----------------------------------     Adding Streak and Weighted Streak as a Feature  --------------------------------------------'''
 
-## Creating a function which computes the Streak and Weighted Streak.
+## Creating a function which computes the Streak and Weighted Streak
 
 def computeStreak(DataFrame, slidingWindowParameter):
     
@@ -489,20 +489,22 @@ def computeForm(DataFrame, stealingFraction):
 ## Computing features for all the data.
 for i, dataFrame in enumerate(DataFrames):
     
+    dataFrame = dataFrame.sort_values(by='GAME_DATE_EST', ascending=True)
     dataFrame['Field Goal Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FG_PCT_home'] - row['FG_PCT_away'], 2), axis=1)
     dataFrame['Free Throw Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FT_PCT_home'] - row['FT_PCT_away'], 2), axis=1)
     dataFrame['Three Point Percentage_Diff'] = dataFrame.apply(lambda row: round(row['FG3_PCT_home'] - row['FG3_PCT_away'], 2), axis=1)
     dataFrame['Assists_Diff'] = dataFrame.apply(lambda row: round(row['AST_home'] - row['AST_away'], 2), axis=1)
     dataFrame['Rebounds_Diff'] = dataFrame.apply(lambda row: round(row['REB_home'] - row['REB_away'], 2), axis=1)
     dataFrame['Rebounds_Diff'] = dataFrame.apply(lambda row: round(row['REB_home'] - row['REB_away'], 2), axis=1)
-    dataFrame['HOME_TEAM_WINS'] = dataFrame['HOME_TEAM_WINS']
 
-    #dataFrame['match_awayteam_position_difference'] = dataFrame.apply(lambda row: row['away_current_pos'] - row['home_current_pos'], axis = 1)
+    DataFrames[i] = dataFrame
+
+    #dataFrame['match_awayteam_position_difference'] = dataFrame.apply(lambda ro,w: row['away_current_pos'] - row['home_current_pos'], axis = 1)
     
     ## Computing the features.
     #computeTGD(dataFrame)
-    computeKPP(dataFrame, 4)
-    computeStreak(dataFrame, 4)
+    #computeKPP(dataFrame, 4)
+    #computeStreak(dataFrame, 4)
     #computeForm(dataFrme, 0.33)
 
     #print(i)
@@ -511,4 +513,4 @@ for i, dataFrame in enumerate(DataFrames):
 DataFrame = pd.concat(DataFrames)
 
 ## Saving the newly engineered dataset.
-DataFrame.to_csv('Article_1_Dataset_2/Dataset/concatenated.csv', sep = ',', index = False)
+DataFrame.to_csv('Article_1_Dataset_3/Data/prepoc_dataset.csv', sep = ',', index = False)
